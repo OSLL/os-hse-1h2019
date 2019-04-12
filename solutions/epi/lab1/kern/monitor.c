@@ -61,7 +61,7 @@ mon_kerninfo(int argc, char **argv, struct Trapframe *tf)
 void one_frame_backtrace(uint32_t* ebp) {
     uint32_t eip = *(ebp + 1);
 
-    cprintf("  ebp %x  eip %x  args %08x %08x %08x %08x %08x\n", 
+    cprintf("  ebp %08x  eip %08x  args %08x %08x %08x %08x %08x\n", 
 			ebp, eip, *(ebp + 2), *(ebp + 3), *(ebp + 4), *(ebp + 5), *(ebp + 6));
 
     struct Eipdebuginfo info;
