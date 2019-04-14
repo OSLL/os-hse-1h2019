@@ -24,6 +24,7 @@ struct Command {
 static struct Command commands[] = {
 	{ "help", "Display this list of commands", mon_help },
 	{ "kerninfo", "Display information about the kernel", mon_kerninfo },
+	{ "backtrace", "Display backtrace for the calling program", mon_backtrace }
 };
 #define NCOMMANDS (sizeof(commands)/sizeof(commands[0]))
 
@@ -55,10 +56,48 @@ mon_kerninfo(int argc, char **argv, struct Trapframe *tf)
 	return 0;
 }
 
+static uint32_t
+get_value_at_address(uint32_t address)
+{
+	uint32_t value;
+	
+	asm("movl (%1),%0" : "=r" (value) : "r" (address));
+	return value;
+}
+
+static void
+print_return_pointer_and_arguments(uint32_t address)
+{
+	uint32_t values[6];
+	for (int i = 1; i < 7; ++i) {
+		values[i-1] = get_value_at_address(address + i * 4);
+	}
+
+	cprintf("eip %08x  args %08x %08x %08x %08x %08x",
+		values[0], values[1], values[2], 
+		values[3], values[4], values[5]);
+}
+
 int
 mon_backtrace(int argc, char **argv, struct Trapframe *tf)
 {
-	// Your code here.
+	uint32_t current_ebp = read_ebp();
+	struct Eipdebuginfo info;
+
+	cprintf("Stack backtrace:\n");
+	while (current_ebp != 0) {
+		cprintf("  ebp %x  ", current_ebp);
+		print_return_pointer_and_arguments(current_ebp);
+		cprintf("\n");
+		
+		uint32_t eip = get_value_at_address(current_ebp + 4);
+		debuginfo_eip(eip, &info);
+		cprintf("	%s:%d: %.*s+%d\n", 
+			info.eip_file, info.eip_line, info.eip_fn_namelen,
+			info.eip_fn_name, eip - info.eip_fn_addr);
+
+		current_ebp = get_value_at_address(current_ebp);
+	}	
 	return 0;
 }
 
