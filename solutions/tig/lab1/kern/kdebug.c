@@ -187,6 +187,9 @@ debuginfo_eip(uintptr_t addr, struct Eipdebuginfo *info)
 	// can interpolate code from a different file!
 	// Such included source files use the N_SOL stab type.
 	stab_binsearch(stabs, &lline, &rline, N_SLINE, addr);
+	if (lline > rline) {
+		return -1;
+	}
 	info->eip_line = stabs[lline].n_desc;
 	while (lline >= lfile
 	       && stabs[lline].n_type != N_SOL
