@@ -1,0 +1,45 @@
+*** Now run 'gdb'.
+***
+WARNING: Image format was not specified for 'obj/kern/kernel.img' and probing guessed raw.
+         Automatically detecting the format is dangerous for raw images, write operations on block 0 will be restricted.
+         Specify the 'raw' format explicitly to remove the restrictions.
+c[?7l[2J[0mSeaBIOS (version ?-20180724_192412-buildhw-07.phx2.fedoraproject.org-1.fc29)
+
+
+iPXE (http://ipxe.org) 00:03.0 C980 PCI2.10 PnP PMM+07F913E0+07ED13E0 C980
+Press Ctrl-B to configure iPXE (PCI 00:03.0)...                                                                               
+
+
+Booting from Hard Disk..6828 decimal is 15254 octal!
+entering test_backtrace 5
+entering test_backtrace 4
+entering test_backtrace 3
+entering test_backtrace 2
+entering test_backtrace 1
+entering test_backtrace 0
+Stack backtrace:
+  ebp f0110f18 eip f010008f args 00000000 00000000 00000000 00000000 f010093d
+   kern/init.c:18: test_backtrace+79
+  ebp f0110f38 eip f0100068 args 00000000 00000001 f0110f78 00000000 f010093d
+   kern/init.c:16: test_backtrace+40
+  ebp f0110f58 eip f0100068 args 00000001 00000002 f0110f98 00000000 f010093d
+   kern/init.c:16: test_backtrace+40
+  ebp f0110f78 eip f0100068 args 00000002 00000003 f0110fb8 00000000 f010093d
+   kern/init.c:16: test_backtrace+40
+  ebp f0110f98 eip f0100068 args 00000003 00000004 00000000 00000000 00000000
+   kern/init.c:16: test_backtrace+40
+  ebp f0110fb8 eip f0100068 args 00000004 00000005 00000000 00010094 00010094
+   kern/init.c:16: test_backtrace+40
+  ebp f0110fd8 eip f01000d4 args 00000005 00001aac 00000644 00000000 00000000
+   kern/init.c:39: i386_init+64
+  ebp f0110ff8 eip f010003e args 00112021 00000000 00000000 00000000 00000000
+   kern/entry.S:83: <unknown>+0
+leaving test_backtrace 0
+leaving test_backtrace 1
+leaving test_backtrace 2
+leaving test_backtrace 3
+leaving test_backtrace 4
+leaving test_backtrace 5
+Welcome to the JOS kernel monitor!
+Type 'help' for a list of commands.
+qemu-system-i386: QEMU: Terminated via GDBstub
