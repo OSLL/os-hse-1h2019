@@ -56,47 +56,27 @@ mon_kerninfo(int argc, char **argv, struct Trapframe *tf)
 	return 0;
 }
 
-static uint32_t
-get_value_at_address(uint32_t address)
-{
-	uint32_t value;
-	
-	asm("movl (%1),%0" : "=r" (value) : "r" (address));
-	return value;
-}
-
-static void
-print_return_pointer_and_arguments(uint32_t address)
-{
-	uint32_t values[6];
-	for (int i = 1; i < 7; ++i) {
-		values[i-1] = get_value_at_address(address + i * 4);
-	}
-
-	cprintf("eip %08x  args %08x %08x %08x %08x %08x",
-		values[0], values[1], values[2], 
-		values[3], values[4], values[5]);
-}
 
 int
 mon_backtrace(int argc, char **argv, struct Trapframe *tf)
 {
-	uint32_t current_ebp = read_ebp();
+	uint32_t* current_ebp = (uint32_t*)read_ebp();
 	struct Eipdebuginfo info;
 
 	cprintf("Stack backtrace:\n");
 	while (current_ebp != 0) {
-		cprintf("  ebp %x  ", current_ebp);
-		print_return_pointer_and_arguments(current_ebp);
-		cprintf("\n");
+		cprintf("  ebp %x  eip %08x  args %08x %08x %08x %08x %08x\n",
+			current_ebp, current_ebp[1], current_ebp[2],
+			current_ebp[3], current_ebp[4], current_ebp[5], 
+			current_ebp[6]);
 		
-		uint32_t eip = get_value_at_address(current_ebp + 4);
+		uint32_t eip = current_ebp[1];
 		debuginfo_eip(eip, &info);
 		cprintf("	%s:%d: %.*s+%d\n", 
 			info.eip_file, info.eip_line, info.eip_fn_namelen,
 			info.eip_fn_name, eip - info.eip_fn_addr);
 
-		current_ebp = get_value_at_address(current_ebp);
+		current_ebp = (uint32_t*) *(current_ebp);
 	}	
 	return 0;
 }
