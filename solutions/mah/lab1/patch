@@ -1,0 +1,88 @@
+diff --git a/conf/env.mk b/conf/env.mk
+index a603f9e..bf56cef 100644
+--- a/conf/env.mk
++++ b/conf/env.mk
+@@ -17,4 +17,4 @@ V = @
+ # If the makefile cannot find your QEMU binary, uncomment the
+ # following line and set it to the full path to QEMU.
+ #
+-# QEMU=
++QEMU=/usr/bin/qemu-system-i386
+diff --git a/kern/kdebug.c b/kern/kdebug.c
+index 9547143..456b0e0 100644
+--- a/kern/kdebug.c
++++ b/kern/kdebug.c
+@@ -178,7 +178,13 @@ debuginfo_eip(uintptr_t addr, struct Eipdebuginfo *info)
+ 	//	There's a particular stabs type used for line numbers.
+ 	//	Look at the STABS documentation and <inc/stab.h> to find
+ 	//	which one.
+-	// Your code here.
++    stab_binsearch(stabs, &lline, &rline, N_SLINE, addr);
++    if (lline <= rline) {
++        info->eip_line = stabs[lline].n_desc;
++    }
++    else {
++        return -1;
++    }
+ 
+ 
+ 	// Search backwards from the line number for the relevant filename
+diff --git a/kern/monitor.c b/kern/monitor.c
+index f8a934a..c4aee14 100644
+--- a/kern/monitor.c
++++ b/kern/monitor.c
+@@ -24,6 +24,7 @@ struct Command {
+ static struct Command commands[] = {
+ 	{ "help", "Display this list of commands", mon_help },
+ 	{ "kerninfo", "Display information about the kernel", mon_kerninfo },
++    { "backtrace", "Display backtrace of the stack", mon_backtrace },
+ };
+ #define NCOMMANDS (sizeof(commands)/sizeof(commands[0]))
+ 
+@@ -58,7 +59,26 @@ mon_kerninfo(int argc, char **argv, struct Trapframe *tf)
+ int
+ mon_backtrace(int argc, char **argv, struct Trapframe *tf)
+ {
+-	// Your code here.
++    cprintf("Stack backtrace:\n");
++    uint32_t *ebp = (uint32_t *)read_ebp();
++    while (ebp) {
++        cprintf("  ebp %08x ", ebp);
++        cprintf("eip %08x ", ebp[1]);
++        cprintf("args %08x %08x %08x %08x %08x\n",
++                ebp[2], ebp[3], ebp[4], ebp[5], ebp[6]);
++
++        struct Eipdebuginfo info;
++        debuginfo_eip(ebp[1], &info);
++        cprintf("   %s:%d: %.*s+%u\n",
++                info.eip_file,
++                info.eip_line,
++                info.eip_fn_namelen,
++                info.eip_fn_name,
++                ebp[1] - info.eip_fn_addr);
++
++
++        ebp = (uint32_t*)*ebp;
++    }
+ 	return 0;
+ }
+ 
+diff --git a/lib/printfmt.c b/lib/printfmt.c
+index 28e01c9..b1de635 100644
+--- a/lib/printfmt.c
++++ b/lib/printfmt.c
+@@ -205,11 +205,9 @@ vprintfmt(void (*putch)(int, void*), void *putdat, const char *fmt, va_list ap)
+ 
+ 		// (unsigned) octal
+ 		case 'o':
+-			// Replace this with your code.
+-			putch('X', putdat);
+-			putch('X', putdat);
+-			putch('X', putdat);
+-			break;
++			num = getuint(&ap, lflag);
++			base = 8;
++			goto number;
+ 
+ 		// pointer
+ 		case 'p':
