@@ -55,6 +55,11 @@ mon_kerninfo(int argc, char **argv, struct Trapframe *tf)
 	return 0;
 }
 
+int value(int k) {
+	return *((int*) k);
+}
+
+
 static inline void
 test(){
 	cprintf("Stack backtrace:\n");
