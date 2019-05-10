@@ -55,10 +55,39 @@ mon_kerninfo(int argc, char **argv, struct Trapframe *tf)
 	return 0;
 }
 
+int value(int k) {
+	return *((int*) k);
+}
+
+
+static inline void
+test(){
+	cprintf("Stack backtrace:\n");
+	int ebp = read_ebp();
+	int eip = value(ebp + 4);
+    while(ebp) {
+        struct Eipdebuginfo info;
+        if (debuginfo_eip(eip, &info) == -1)  {
+                cprintf("Problem while runnig debuginfo_eip KEKOS\n");
+        } else {
+            int arg1 = value(ebp + 8), arg2 = value(ebp + 12), arg3 = value(ebp + 16), arg4 = value(ebp + 20), arg5 = value(ebp + 24);
+            cprintf("ebp %08x eip %08x args %08x %08x %08x %08x %08x\n", ebp, eip, arg1, arg2, arg3, arg4, arg5);
+            cprintf("\t%s:%d: ", info.eip_file, info.eip_line);
+			for (int i = 0; i < info.eip_fn_namelen; i++) {
+			cprintf("%c", info.eip_fn_name[i]);
+		}
+		cprintf("+%d\n", eip - info.eip_fn_addr);
+    }
+	ebp = value(ebp);
+	eip = value(ebp + 4);
+	}
+}
+
+
 int
 mon_backtrace(int argc, char **argv, struct Trapframe *tf)
 {
-	// Your code here.
+	test();
 	return 0;
 }
 
