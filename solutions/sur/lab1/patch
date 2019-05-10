@@ -1,0 +1,61 @@
+diff --git a/kern/kdebug.c b/kern/kdebug.c
+index 9547143..00c71fe 100644
+--- a/kern/kdebug.c
++++ b/kern/kdebug.c
+@@ -179,7 +179,11 @@ debuginfo_eip(uintptr_t addr, struct Eipdebuginfo *info)
+ 	//	Look at the STABS documentation and <inc/stab.h> to find
+ 	//	which one.
+ 	// Your code here.
+-
++    stab_binsearch(stabs, &lline, &rline, N_SLINE, addr);
++    if (lline > rline) {
++        return -1;
++    }
++    info->eip_line = stabs[lline].n_desc;
+ 
+ 	// Search backwards from the line number for the relevant filename
+ 	// stab.
+diff --git a/kern/monitor.c b/kern/monitor.c
+index f8a934a..ba00fdd 100644
+--- a/kern/monitor.c
++++ b/kern/monitor.c
+@@ -58,7 +58,20 @@ mon_kerninfo(int argc, char **argv, struct Trapframe *tf)
+ int
+ mon_backtrace(int argc, char **argv, struct Trapframe *tf)
+ {
+-	// Your code here.
++    cprintf("Stack backtrace:\n");
++    uint32_t ebp = read_ebp();
++    while (ebp) {
++        uint32_t* esp = (uint32_t*) ebp;
++        cprintf("  ebp %08x  eip %08x  args", ebp, esp[1], esp[0]);
++        for (int i = 2; i <= 6; i++) {
++            cprintf(" %08x", esp[i]);
++        }
++        cprintf("\n");
++        struct Eipdebuginfo info;
++        debuginfo_eip(esp[1], &info);
++        cprintf("         %s:%d: %.*s+%d\n", info.eip_file, info.eip_line, info.eip_fn_namelen, info.eip_fn_name, esp[1] - info.eip_fn_addr); // esp[1] - info.eip_fn_addr
++        ebp = esp[0];
++    }
+ 	return 0;
+ }
+ 
+diff --git a/lib/printfmt.c b/lib/printfmt.c
+index 28e01c9..b8c5552 100644
+--- a/lib/printfmt.c
++++ b/lib/printfmt.c
+@@ -206,10 +206,9 @@ vprintfmt(void (*putch)(int, void*), void *putdat, const char *fmt, va_list ap)
+ 		// (unsigned) octal
+ 		case 'o':
+ 			// Replace this with your code.
+-			putch('X', putdat);
+-			putch('X', putdat);
+-			putch('X', putdat);
+-			break;
++			num = getuint(&ap, lflag);
++            base = 8;
++            goto number;
+ 
+ 		// pointer
+ 		case 'p':
