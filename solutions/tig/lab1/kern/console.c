@@ -191,7 +191,7 @@ cga_putc(int c)
 		break;
 	}
 
-	// What is the purpose of this?
+	/* solving problem "getting out of the "*/  
 	if (crt_pos >= CRT_SIZE) {
 		int i;
 
