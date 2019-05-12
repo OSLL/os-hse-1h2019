@@ -79,7 +79,7 @@ mon_backtrace(int argc, char **argv, struct Trapframe *tf)
 		        info.eip_fn_name,
 		        *(ebp + 1) - info.eip_fn_addr);
 				
-		debuginfo_eip(*(ebp + 1), &eipdebuginfo);
+		debuginfo_eip(*(ebp + 1), &info);
 				
 		ebp = (uint32_t *) *ebp;
 	}
