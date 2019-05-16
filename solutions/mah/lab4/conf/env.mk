@@ -6,7 +6,7 @@
 #
 # For overview commands only, the line should read 'V = @'.
 # For overview and verbose commands, the line should read 'V ='.
-V = @
+# V = @
 
 # If your system-standard GNU toolchain is ELF-compatible, then comment
 # out the following line to use those tools (as opposed to the i386-jos-elf
@@ -17,4 +17,4 @@ V = @
 # If the makefile cannot find your QEMU binary, uncomment the
 # following line and set it to the full path to QEMU.
 #
-# QEMU=
+QEMU=/usr/bin/qemu-system-i386
