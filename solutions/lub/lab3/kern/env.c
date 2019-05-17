@@ -362,7 +362,6 @@ load_icode(struct Env *e, uint8_t *binary, size_t size)
 	}	
 	lcr3(PADDR(kern_pgdir));
 	
-	//run?
 	e->env_tf.tf_eip = elf_header->e_entry;	
 	
 	// Now map one page for the program's initial stack
