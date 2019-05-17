@@ -374,7 +374,7 @@ pgdir_walk(pde_t *pgdir, const void *va, int create)
 		page->pp_ref++;
 		pde = pgdir[PDX(va)] = page2pa(page) | 511; // give all permissions
 		return (pte_t *) KADDR(PTE_ADDR(pde)) + PTX(va);
-	}s
+	}
 }
 
 //
