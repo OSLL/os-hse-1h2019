@@ -150,7 +150,8 @@ mem_init(void)
 
 	//////////////////////////////////////////////////////////////////////
 	// Make 'envs' point to an array of size 'NENV' of 'struct Env'.
-	// LAB 3: Your code here.
+	
+	envs = (struct Env*) boot_alloc(sizeof(struct Env) * NENV);
 
 	//////////////////////////////////////////////////////////////////////
 	// Now that we've allocated the initial kernel data structures, we set
@@ -174,8 +175,7 @@ mem_init(void)
 	//      (ie. perm = PTE_U | PTE_P)
 	//    - pages itself -- kernel RW, user NONE
 	
-	boot_map_region(kern_pgdir, UPAGES, PTSIZE, 
-			PADDR(pages), PTE_U); 
+	boot_map_region(kern_pgdir, UPAGES, PTSIZE, PADDR(pages), PTE_U); 
 
 	//////////////////////////////////////////////////////////////////////
 	// Map the 'envs' array read-only by the user at linear address UENVS
@@ -183,7 +183,8 @@ mem_init(void)
 	// Permissions:
 	//    - the new image at UENVS  -- kernel R, user R
 	//    - envs itself -- kernel RW, user NONE
-	// LAB 3: Your code here.
+	
+	boot_map_region(kern_pgdir, UENVS, PTSIZE, PADDR(envs), PTE_U);
 
 	//////////////////////////////////////////////////////////////////////
 	// Use the physical memory that 'bootstack' refers to as the kernel
@@ -351,7 +352,6 @@ page_decref(struct PageInfo* pp)
 //
 // Hint 3: look at inc/mmu.h for useful macros that mainipulate page
 // table and page directory entries.
-//
 pte_t *
 pgdir_walk(pde_t *pgdir, const void *va, int create)
 {
@@ -530,8 +530,17 @@ static uintptr_t user_mem_check_addr;
 int
 user_mem_check(struct Env *env, const void *va, size_t len, int perm)
 {
-	// LAB 3: Your code here.
+	const void* cur_va = ROUNDDOWN(va, PGSIZE);
+	const void* end_va = ROUNDUP(va + len, PGSIZE);
+	for (; cur_va < end_va; cur_va += PGSIZE) {
+		pte_t *pte = pgdir_walk(env->env_pgdir, cur_va, false);
+		int targ_perm = perm | PTE_P;
 
+		if (!pte || (cur_va >= (void*)ULIM) || ((*pte & targ_perm) != targ_perm)) {
+			user_mem_check_addr = (uintptr_t)(cur_va < va ? va : cur_va);
+			return-E_FAULT;
+		}
+	}
 	return 0;
 }
 
