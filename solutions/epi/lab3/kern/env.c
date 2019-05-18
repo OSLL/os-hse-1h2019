@@ -534,7 +534,7 @@ env_run(struct Env *e)
 
 	mon_backtrace(0, 0, 0);
 
-	lcr3((uint32_t)e->env_pgdir);
+	lcr3(PADDR(e->env_pgdir));
 
 	env_pop_tf(&e->env_tf);
 }

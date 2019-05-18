@@ -27,10 +27,33 @@ static struct Command commands[] = {
     { "kerninfo", "Display information about the kernel", mon_kerninfo },
     { "panic", "Cause kernel panic", mon_panic },
     { "backtrace", "Display stack backtrace", mon_backtrace },
+    { "int3", "Use int3", mon_int3 },
+    { "div", "divide by zero", mon_divzero },
+    { "ss", "make a system call", mon_sc },
 };
 #define NCOMMANDS (sizeof(commands)/sizeof(commands[0]))
 
 /***** Implementations of basic kernel monitor commands *****/
+
+int mon_sc(int argc, char **argv, struct Trapframe *tf) {
+    asm volatile("int $0x30");
+    return 0;
+}
+
+int
+mon_divzero(int argc, char **argv, struct Trapframe *tf) {
+    int x = 4;
+    x -= x;
+    int y = 1 / x;
+    cprintf("%d\n", y);
+    return 0;
+}
+
+int
+mon_int3(int argc, char **argv, struct Trapframe *tf) {
+    asm volatile("int $3");
+    return 0;
+}
 
 int
 mon_help(int argc, char **argv, struct Trapframe *tf)
