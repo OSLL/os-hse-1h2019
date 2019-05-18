@@ -532,7 +532,7 @@ env_run(struct Env *e)
 	e->env_runs++;
 	cprintf("switching\n");
 
-	mon_backtrace(0, 0, 0);
+	// mon_backtrace(0, 0, 0);
 
 	lcr3(PADDR(e->env_pgdir));
 

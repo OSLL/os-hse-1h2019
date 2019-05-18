@@ -611,6 +611,18 @@ int
 user_mem_check(struct Env *env, const void *va, size_t len, int perm)
 {
 	// LAB 3: Your code here.
+	void *va_alligned = ROUNDDOWN((void*)va, PGSIZE);
+	size_t len_alligned = ROUNDUP(va + len, PGSIZE) - va_alligned;
+	size_t page_cnt = len_alligned >> PGSHIFT;
+
+	for (int i = 0; i < page_cnt; i++) {
+	    void *a = va_alligned + i * PGSIZE;
+	    pte_t *p = pgdir_walk(env->env_pgdir, a, 0);
+	    if (p == NULL || (int32_t)a >= ULIM || !(*p & PTE_P) || !(*p & perm)) {
+			user_mem_check_addr = (int32_t) MAX(a, va);
+			return -E_FAULT;
+	    }
+	}
 
 	return 0;
 }

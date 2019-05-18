@@ -49,7 +49,7 @@
 TRAPHANDLER_NOEC(divide_error, T_DIVIDE)
 TRAPHANDLER_NOEC(debug_exception, T_DEBUG)
 TRAPHANDLER_NOEC(non_maskable_interrupt, T_NMI)
-TRAPHANDLER_NOEC(breakpoint, T_BRKPT)
+TRAPHANDLER_NOEC(breakpoint2, T_BRKPT)
 TRAPHANDLER_NOEC(overflow, T_OFLOW)
 TRAPHANDLER_NOEC(bounds_check, T_BOUND)
 TRAPHANDLER_NOEC(illegal_opcode, T_ILLOP)

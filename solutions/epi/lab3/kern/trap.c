@@ -61,7 +61,7 @@ static const char *trapname(int trapno)
 void divide_error();
 void debug_exception();
 void non_maskable_interrupt();
-void breakpoint();
+void breakpoint2();
 void overflow();
 void bounds_check();
 void illegal_opcode();
@@ -88,7 +88,7 @@ trap_init(void)
 	SETGATE(idt[T_DIVIDE],	0, GD_KT, divide_error					, 0);
 	SETGATE(idt[T_DEBUG],	0, GD_KT, debug_exception				, 0);
 	SETGATE(idt[T_NMI],		0, GD_KT, non_maskable_interrupt		, 0);
-	SETGATE(idt[T_BRKPT],	1, GD_KT, breakpoint					, 3);
+	SETGATE(idt[T_BRKPT],	1, GD_KT, breakpoint2					, 3);
 	SETGATE(idt[T_OFLOW],	0, GD_KT, overflow						, 0);
 	SETGATE(idt[T_BOUND],	0, GD_KT, bounds_check					, 0);
 	SETGATE(idt[T_ILLOP],	0, GD_KT, illegal_opcode				, 0);
@@ -187,9 +187,21 @@ trap_dispatch(struct Trapframe *tf)
 
 	if (tf->tf_trapno == T_PGFLT) {
 	    page_fault_handler(tf);
+	    return;
 	}
 	if (tf->tf_trapno == T_BRKPT) {
 	    monitor(tf);
+	    return;
+	}
+	if (tf->tf_trapno == T_SYSCALL) {
+	    tf->tf_regs.reg_eax = syscall(
+			tf->tf_regs.reg_eax,
+		    tf->tf_regs.reg_edx,
+		    tf->tf_regs.reg_ecx,
+		    tf->tf_regs.reg_ebx,
+		    tf->tf_regs.reg_edi,
+		    tf->tf_regs.reg_esi);
+	    return;
 	}
 
 	cprintf("this is bad\n");
