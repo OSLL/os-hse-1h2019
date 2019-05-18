@@ -6,6 +6,7 @@
 #include <inc/string.h>
 #include <inc/assert.h>
 #include <inc/elf.h>
+#include <inc/stdio.h>
 
 #include <kern/env.h>
 #include <kern/pmap.h>
@@ -185,7 +186,9 @@ env_setup_vm(struct Env *e)
 	//    - The functions in kern/pmap.h are handy.
 
 	// LAB 3: Your code here.
+	p->pp_ref++;
 	e->env_pgdir = page2kva(p);
+	memcpy(e->env_pgdir, kern_pgdir, PGSIZE);
 
 	// UVPT maps the env's own page table read-only.
 	// Permissions: kernel R, user R
@@ -284,7 +287,8 @@ region_alloc(struct Env *e, void *va, size_t len)
 	    if (!(p = page_alloc(0)))
 			panic("Not enough memory for region_alloc");
 
-	    page_insert(e->env_pgdir, p, va + i * PGSIZE, PTE_U | PTE_W);
+	    if (page_insert(e->env_pgdir, p, va + i * PGSIZE, PTE_U | PTE_W) < 0)
+			panic("cant insert page");
 	}
 }
 
@@ -349,23 +353,26 @@ load_icode(struct Env *e, uint8_t *binary, size_t size)
 	// is this a valid ELF?
 	if (hdr->e_magic != ELF_MAGIC)
 	    panic("No elf magic!");
+	cprintf("elf magic!\n");
 
 	// load each program segment (ignores ph flags)
+	// uint32_t cr3 = rcr3();
+	lcr3(PADDR(e->env_pgdir));
+
 	ph = (struct Proghdr *)((uint8_t *)hdr + hdr->e_phoff);
 	eph = ph + hdr->e_phnum;
-	for (; ph < eph; ph++) {
-	    // p_pa is the load address of this segment (as well
-	    // as the physical address)
-	    region_alloc(e, (void*)ph->p_va, ph->p_memsz);
-		// readvseg(ph->p_va, ph->p_memsz, ph->p_offset);
-	    // memcpy(ph->p_va, binary + ph->p_offset, ph->p_memsz);
-	    uint32_t cr3 = rcr3();
-	    lcr3((uint32_t)e->env_pgdir);
-	    memcpy((void*)ph->p_va, binary + ph->p_offset, ph->p_memsz);
-	    lcr3(cr3);
-	}
 
-	e->env_tf.tf_eip = hdr->e_entry;
+
+	for (; ph < eph; ph++) {
+	    if (ph->p_type != ELF_PROG_LOAD) continue;
+
+	    region_alloc(e, (void*)ph->p_va, ph->p_memsz);
+	    memcpy((void*)ph->p_va, binary + ph->p_offset, ph->p_filesz);
+	    memset((void *)(ph->p_va + ph->p_filesz), 0, ph->p_memsz - ph->p_filesz);
+	}
+	lcr3(PADDR(kern_pgdir));
+	cprintf("copied\n");
+
 	// e->env_tf.tf_ss = USTACKTOP;
 	// e->env_tf.tf_cs = hdr->e_entry;
 
@@ -374,6 +381,7 @@ load_icode(struct Env *e, uint8_t *binary, size_t size)
 
 	// LAB 3: Your code here.
 	region_alloc(e, (void*)(USTACKTOP - PGSIZE), PGSIZE);
+	e->env_tf.tf_eip = hdr->e_entry;
 }
 
 //
@@ -390,10 +398,11 @@ env_create(uint8_t *binary, size_t size, enum EnvType type)
 	struct Env *e;
 	int ret = env_alloc(&e, 0);
 	if (ret < 0) {
+	    cprintf("aaa");
 	    panic("cant alloc env");
 	}
 	e->env_type = type;
-	env_setup_vm(e);
+	// env_setup_vm(e);
 	load_icode(e, binary, size);
 }
 
@@ -521,7 +530,12 @@ env_run(struct Env *e)
 	curenv = e;
 	e->env_status = ENV_RUNNING;
 	e->env_runs++;
+	cprintf("switching\n");
+
+	mon_backtrace(0, 0, 0);
+
 	lcr3((uint32_t)e->env_pgdir);
+
 	env_pop_tf(&e->env_tf);
 }
 
