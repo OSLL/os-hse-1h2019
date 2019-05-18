@@ -64,7 +64,58 @@ trap_init(void)
 {
 	extern struct Segdesc gdt[];
 
-	// LAB 3: Your code here.
+	// LAB 3: My code here.
+	extern void idt_divide();
+	extern void idt_debug();
+	extern void idt_nmi();
+	extern void idt_brkpt();
+	extern void idt_oflow();
+	extern void idt_bound();
+	extern void idt_illop();
+	extern void idt_device();
+	extern void idt_dblflt();
+	extern void idt_tss();
+	extern void idt_segnp();
+	extern void idt_stack();
+	extern void idt_gpflt();
+	extern void idt_pgflt();
+	extern void idt_fperr();
+	extern void idt_align();
+	extern void idt_mchk();
+	extern void idt_simderr();
+	extern void idt_syscall();
+	extern void idt_irq_timer();
+	extern void idt_irq_kbd();
+	extern void idt_irq_serial();
+	extern void idt_irq_spurious();
+	extern void idt_irq_ide();
+	extern void idt_irq_error();
+
+	SETGATE(idt[T_DIVIDE], 1, GD_KT, idt_divide, 0);
+	SETGATE(idt[T_DEBUG], 1, GD_KT, idt_debug, 0);
+	SETGATE(idt[T_NMI], 0, GD_KT, idt_nmi, 0);
+	SETGATE(idt[T_BRKPT], 1, GD_KT, idt_brkpt, 3);
+	SETGATE(idt[T_OFLOW], 1, GD_KT, idt_oflow, 0);
+	SETGATE(idt[T_BOUND], 1, GD_KT, idt_bound, 0);
+	SETGATE(idt[T_ILLOP], 1, GD_KT, idt_illop, 0);
+	SETGATE(idt[T_DEVICE], 1, GD_KT, idt_device, 0);
+	SETGATE(idt[T_DBLFLT], 1, GD_KT, idt_dblflt, 0);
+	SETGATE(idt[T_TSS], 1, GD_KT, idt_tss, 0);
+	SETGATE(idt[T_SEGNP], 1, GD_KT, idt_segnp, 0);
+	SETGATE(idt[T_STACK], 1, GD_KT, idt_stack, 0);
+	SETGATE(idt[T_GPFLT], 1, GD_KT, idt_gpflt, 0);
+	SETGATE(idt[T_PGFLT], 1, GD_KT, idt_pgflt, 0);
+	SETGATE(idt[T_FPERR], 1, GD_KT, idt_fperr, 0);
+	SETGATE(idt[T_ALIGN], 1, GD_KT, idt_align, 0);
+	SETGATE(idt[T_MCHK], 1, GD_KT, idt_mchk, 0);
+	SETGATE(idt[T_SIMDERR], 1, GD_KT, idt_simderr, 0);
+	SETGATE(idt[T_SYSCALL], 0, GD_KT, idt_syscall, 3);
+	SETGATE(idt[IRQ_OFFSET + IRQ_TIMER], 0, GD_KT, idt_irq_timer, 0);
+	SETGATE(idt[IRQ_OFFSET + IRQ_KBD], 0, GD_KT, idt_irq_kbd, 0);
+	SETGATE(idt[IRQ_OFFSET + IRQ_SERIAL], 0, GD_KT, idt_irq_serial, 0);
+	SETGATE(idt[IRQ_OFFSET + IRQ_SPURIOUS], 0, GD_KT, idt_irq_spurious, 0);
+	SETGATE(idt[IRQ_OFFSET + IRQ_IDE], 0, GD_KT, idt_irq_ide, 0);
+	SETGATE(idt[IRQ_OFFSET + IRQ_ERROR], 0, GD_KT, idt_irq_error, 0);
 
 	// Per-CPU setup 
 	trap_init_percpu();
@@ -142,7 +193,20 @@ static void
 trap_dispatch(struct Trapframe *tf)
 {
 	// Handle processor exceptions.
-	// LAB 3: Your code here.
+	// LAB 3: My code is here.
+	if (tf->tf_trapno == T_PGFLT) {
+		page_fault_handler(tf);
+		return;
+	}
+	if (tf->tf_trapno == T_BRKPT) {
+		monitor(tf);
+		return;
+	}
+	if (tf->tf_trapno == T_SYSCALL) {
+		tf->tf_regs.reg_eax = syscall(tf->tf_regs.reg_eax, tf->tf_regs.reg_edx, tf->tf_regs.reg_ecx,
+			tf->tf_regs.reg_ebx, tf->tf_regs.reg_edi, tf->tf_regs.reg_esi);
+		return;
+	}
 
 	// Unexpected trap: The user process or the kernel has a bug.
 	print_trapframe(tf);
@@ -203,7 +267,11 @@ page_fault_handler(struct Trapframe *tf)
 
 	// Handle kernel-mode page faults.
 
-	// LAB 3: Your code here.
+	// LAB 3: My code is here.
+	if (!(tf->tf_cs & 3)) {
+		panic("page_fault_handler: page fault in kernel mode.");
+		return;
+	}
 
 	// We've already handled kernel-mode exceptions, so if we get here,
 	// the page fault happened in user mode.
