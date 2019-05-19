@@ -9,6 +9,27 @@
 #include <kern/env.h>
 #include <kern/syscall.h>
 
+
+void f0();
+void f1();
+void f2();
+void f3();
+void f4();
+void f5();
+void f6();
+void f7();
+void f8();
+void f10();
+void f11(); 
+void f12();
+void f13();
+void f14();
+void f16();
+void f17();
+void f18();
+void f19();
+void f48();
+
 static struct Taskstate ts;
 
 /* For debugging, so print_trapframe can distinguish between printing
@@ -24,7 +45,6 @@ struct Gatedesc idt[256] = { { 0 } };
 struct Pseudodesc idt_pd = {
 	sizeof(idt) - 1, (uint32_t) idt
 };
-
 
 static const char *trapname(int trapno)
 {
@@ -63,9 +83,27 @@ void
 trap_init(void)
 {
 	extern struct Segdesc gdt[];
-
 	// LAB 3: Your code here.
 
+	SETGATE(idt[0], 0, GD_KT, f0, 0);
+	SETGATE(idt[1], 0, GD_KT, f1, 0);
+	SETGATE(idt[2], 0, GD_KT, f2, 0);
+	SETGATE(idt[3], 0, GD_KT, f3, 3);
+	SETGATE(idt[4], 0, GD_KT, f4, 0);
+	SETGATE(idt[5], 0, GD_KT, f5, 0);
+	SETGATE(idt[6], 0, GD_KT, f6, 0);
+	SETGATE(idt[7], 0, GD_KT, f7, 0);
+	SETGATE(idt[8], 0, GD_KT, f8, 0);
+	SETGATE(idt[10], 0, GD_KT, f10, 0);
+	SETGATE(idt[11], 0, GD_KT, f11, 0);
+	SETGATE(idt[12], 0, GD_KT, f12, 0);
+	SETGATE(idt[13], 0, GD_KT, f13, 0);
+	SETGATE(idt[14], 0, GD_KT, f14, 0);
+	SETGATE(idt[16], 0, GD_KT, f16, 0);
+	SETGATE(idt[17], 0, GD_KT, f17, 0);
+	SETGATE(idt[18], 0, GD_KT, f18, 0);
+	SETGATE(idt[19], 0, GD_KT, f19, 0);
+	SETGATE(idt[48], 0, GD_KT, f48, 3);
 	// Per-CPU setup 
 	trap_init_percpu();
 }
@@ -144,6 +182,21 @@ trap_dispatch(struct Trapframe *tf)
 	// Handle processor exceptions.
 	// LAB 3: Your code here.
 
+	// cprintf("TRAPNO %d\n", tf->tf_trapno);
+	// print_trapframe(tf);
+	if (tf->tf_trapno == T_BRKPT) {
+		monitor(tf);
+		return;
+	} else if (tf->tf_trapno == T_PGFLT) {
+		page_fault_handler(tf);
+		return;
+	} else if (tf->tf_trapno == T_SYSCALL) {
+		int result = syscall(tf->tf_regs.reg_eax, tf->tf_regs.reg_edx, tf->tf_regs.reg_ecx,
+								tf->tf_regs.reg_ebx, tf->tf_regs.reg_edi, tf->tf_regs.reg_esi);
+		tf->tf_regs.reg_eax = result;
+		return;
+	}
+
 	// Unexpected trap: The user process or the kernel has a bug.
 	print_trapframe(tf);
 	if (tf->tf_cs == GD_KT)
@@ -182,6 +235,7 @@ trap(struct Trapframe *tf)
 
 	// Record that tf is the last real trapframe so
 	// print_trapframe can print some additional information.
+	// print_trapframe(tf);
 	last_tf = tf;
 
 	// Dispatch based on what type of trap occurred
@@ -204,6 +258,10 @@ page_fault_handler(struct Trapframe *tf)
 	// Handle kernel-mode page faults.
 
 	// LAB 3: Your code here.
+
+	if (!(tf->tf_cs & 3)) {
+		panic("page fault happens in kernel mode\n");
+	}
 
 	// We've already handled kernel-mode exceptions, so if we get here,
 	// the page fault happened in user mode.
