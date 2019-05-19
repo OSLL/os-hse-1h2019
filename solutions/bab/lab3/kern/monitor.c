@@ -10,7 +10,6 @@
 #include <kern/console.h>
 #include <kern/monitor.h>
 #include <kern/kdebug.h>
-#include <kern/trap.h>
 
 #define CMDBUF_SIZE	80	// enough for one VGA text line
 
@@ -59,7 +58,24 @@ mon_kerninfo(int argc, char **argv, struct Trapframe *tf)
 int
 mon_backtrace(int argc, char **argv, struct Trapframe *tf)
 {
-	// Your code here.
+	uint32_t *ebp = (uint32_t*)read_ebp(), *eip = (uint32_t*)ebp[1];
+    struct Eipdebuginfo eipdebuginfo;
+
+    cprintf("Stack backtrace:\n");
+    while (ebp) {
+        debuginfo_eip((uintptr_t)eip, &eipdebuginfo);
+
+        cprintf("  ebp %08x eip %08x args", ebp, eip);
+        for (int i = 2; i < 7; i++) {
+            cprintf(" %08x", ebp[i]);
+        }
+        cprintf("\n");
+        cprintf("  %s:%d: %.*s+%d\n", eipdebuginfo.eip_file, eipdebuginfo.eip_line, eipdebuginfo.eip_fn_namelen,
+                eipdebuginfo.eip_fn_name, eip - eipdebuginfo.eip_fn_addr);
+
+        ebp = (uint32_t*)*ebp, eip = (uint32_t*)ebp[1];
+    }
+
 	return 0;
 }
 
@@ -117,8 +133,6 @@ monitor(struct Trapframe *tf)
 	cprintf("Welcome to the JOS kernel monitor!\n");
 	cprintf("Type 'help' for a list of commands.\n");
 
-	if (tf != NULL)
-		print_trapframe(tf);
 
 	while (1) {
 		buf = readline("K> ");
