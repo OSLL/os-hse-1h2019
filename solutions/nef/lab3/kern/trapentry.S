@@ -43,13 +43,36 @@
 
 .text
 
-/*
- * Lab 3: Your code here for generating entry points for the different traps.
- */
+TRAPHANDLER_NOEC( divide_interrupt_handler,  T_DIVIDE )
+TRAPHANDLER_NOEC( debug_interrupt_handler,   T_DEBUG  )
+TRAPHANDLER_NOEC( nmi_interrupt_handler,     T_NMI    )
+TRAPHANDLER_NOEC( brkpt_interrupt_handler,   T_BRKPT  )
+TRAPHANDLER_NOEC( oflow_interrupt_handler,   T_OFLOW  )
+TRAPHANDLER_NOEC( bound_interrupt_handler,   T_BOUND  )
+TRAPHANDLER_NOEC( illop_interrupt_handler,   T_ILLOP  )
+TRAPHANDLER_NOEC( device_interrupt_handler,  T_DEVICE )
+TRAPHANDLER(      dblflt_interrupt_handler,  T_DBLFLT )
+/*TRAPHANDLER_NOEC( coproc_interrupt_handler,  T_COPROC )*/
+TRAPHANDLER(      tss_interrupt_handler,     T_TSS    )
+TRAPHANDLER(      segnp_interrupt_handler,   T_SEGNP  )
+TRAPHANDLER(      stack_interrupt_handler,   T_STACK  )
+TRAPHANDLER(      gpflt_interrupt_handler,   T_GPFLT  )
+TRAPHANDLER(      pgflt_interrupt_handler,   T_PGFLT  )
+/*TRAPHANDLER_NOEC( res_interrupt_handler,     T_RES    )*/
+TRAPHANDLER_NOEC( fperr_interrupt_handler,   T_FPERR  )
+TRAPHANDLER(      align_interrupt_handler,   T_ALIGN  )
+TRAPHANDLER_NOEC( mchk_interrupt_handler,    T_MCHK   )
+TRAPHANDLER_NOEC( simderr_interrupt_handler, T_SIMDERR)
 
+TRAPHANDLER_NOEC( syscall_interrupt_handler, T_SYSCALL)
 
-
-/*
- * Lab 3: Your code here for _alltraps
- */
+_alltraps:
+	push %es
+	push %ds
+	pushal
+	mov $(GD_KD), %ax
+	mov %ax, %ds
+	mov %ax, %es
+	pushl %esp
+	call trap
 
