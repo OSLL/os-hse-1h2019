@@ -47,9 +47,45 @@
  * Lab 3: Your code here for generating entry points for the different traps.
  */
 
+#define TH(N) TRAPHANDLER(traphandler##N, N)
+#define THN(N) TRAPHANDLER_NOEC(traphandler##N, N)
 
+THN(0)
+THN(1)
+THN(2)
+THN(3)
+THN(4)
+THN(5)
+THN(6)
+THN(7)
+TH(8)
+TH(10)
+TH(11)
+TH(12)
+TH(13)
+TH(14)
+THN(16)
+THN(17)
+THN(18)
+THN(19)
+THN(48)
 
 /*
  * Lab 3: Your code here for _alltraps
  */
+
+.global _alltraps
+_alltraps:
+// push values to make the stack look like a struct Traprame
+	pushl %ds
+	pushl %es
+	pushal
+// load GD_KD into %s and %es
+	movl $GD_KD, %eax
+	movl %eax, %ds
+	movl %eax, %es
+// pushl %esp to pass a pointer to the Trapframe as an argument to trap()
+	pushl %esp
+// call trap (can trap ever return?)
+	call trap
 
