@@ -46,10 +46,65 @@
 /*
  * Lab 3: Your code here for generating entry points for the different traps.
  */
+#define TH(N) TRAPHANDLER(handler_##N, N)
+#define THN(N) TRAPHANDLER_NOEC(handler_##N, N)
 
-
+THN(0)
+THN(1)
+THN(2)
+THN(3)
+THN(4)
+THN(5)
+THN(6)
+THN(7)
+TH(8)
+TH(10)
+TH(11)
+TH(12)
+TH(13)
+TH(14)
+THN(16)
+TH(17)
+THN(18)
+THN(19)
+THN(48)
 
 /*
  * Lab 3: Your code here for _alltraps
  */
 
+.data
+.globl handlers
+handlers:
+	.long handler_0
+	.long handler_1
+	.long handler_2
+	.long handler_3
+	.long handler_4
+	.long handler_5
+	.long handler_6
+	.long handler_7
+	.long handler_8
+	.long 0
+	.long handler_10
+	.long handler_11
+	.long handler_12
+	.long handler_13
+	.long handler_14
+	.long 0
+	.long handler_16
+	.long handler_17
+	.long handler_18
+	.long handler_19
+
+
+_alltraps:
+	pushl %ds
+	pushl %es
+	pushal
+	pushl $GD_KD
+	pushl $GD_KD
+	popl %es
+	popl %ds
+	pushl %esp
+	call trap
