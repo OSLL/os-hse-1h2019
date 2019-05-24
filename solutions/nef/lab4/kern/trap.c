@@ -65,13 +65,56 @@ static const char *trapname(int trapno)
 	return "(unknown trap)";
 }
 
+void divide_interrupt_handler();
+void debug_interrupt_handler();
+void nmi_interrupt_handler();
+void brkpt_interrupt_handler();
+void oflow_interrupt_handler();
+void bound_interrupt_handler();
+void illop_interrupt_handler();
+void device_interrupt_handler();
+void dblflt_interrupt_handler();
+void tss_interrupt_handler();
+void segnp_interrupt_handler();
+void stack_interrupt_handler();
+void gpflt_interrupt_handler();
+void pgflt_interrupt_handler();
+void fperr_interrupt_handler();
+void align_interrupt_handler();
+void mchk_interrupt_handler();
+void simderr_interrupt_handler();
+
+void syscall_interrupt_handler();
 
 void
 trap_init(void)
 {
 	extern struct Segdesc gdt[];
 
-	// LAB 3: Your code here.
+	// !banged ones are useful for userspace
+	// try to choose 'istrap' correctly, but it does not seem to matter
+	SETGATE(idt[T_DIVIDE],  1, GD_KT, divide_interrupt_handler,  0);
+	SETGATE(idt[T_DEBUG],   1, GD_KT, debug_interrupt_handler,   0);
+	SETGATE(idt[T_NMI],     0, GD_KT, nmi_interrupt_handler,     0);
+	SETGATE(idt[T_BRKPT],   1, GD_KT, brkpt_interrupt_handler,   3); // !
+	SETGATE(idt[T_OFLOW],   1, GD_KT, oflow_interrupt_handler,   0);
+	SETGATE(idt[T_BOUND],   1, GD_KT, bound_interrupt_handler,   3); // !
+	SETGATE(idt[T_ILLOP],   1, GD_KT, illop_interrupt_handler,   0);
+	SETGATE(idt[T_DEVICE],  0, GD_KT, device_interrupt_handler,  0);
+	SETGATE(idt[T_DBLFLT],  1, GD_KT, dblflt_interrupt_handler,  0);
+	//SETGATE(idt[T_COPROC],  1, GD_KT, coproc_interrupt_handler,  0);
+	SETGATE(idt[T_TSS],     1, GD_KT, tss_interrupt_handler,     0);
+	SETGATE(idt[T_SEGNP],   1, GD_KT, segnp_interrupt_handler,   0);
+	SETGATE(idt[T_STACK],   1, GD_KT, stack_interrupt_handler,   0);
+	SETGATE(idt[T_GPFLT],   1, GD_KT, gpflt_interrupt_handler,   0);
+	SETGATE(idt[T_PGFLT],   1, GD_KT, pgflt_interrupt_handler,   0);
+	//SETGATE(idt[T_RES],     1, GD_KT, res_interrupt_handler,     0);
+	SETGATE(idt[T_FPERR],   1, GD_KT, fperr_interrupt_handler,   0);
+	SETGATE(idt[T_ALIGN],   1, GD_KT, align_interrupt_handler,   0);
+	SETGATE(idt[T_MCHK],    1, GD_KT, mchk_interrupt_handler,    0);
+	SETGATE(idt[T_SIMDERR], 1, GD_KT, simderr_interrupt_handler, 0);
+
+	SETGATE(idt[T_SYSCALL], 1, GD_KT, syscall_interrupt_handler, 3); // !
 
 	// Per-CPU setup 
 	trap_init_percpu();
@@ -172,7 +215,21 @@ static void
 trap_dispatch(struct Trapframe *tf)
 {
 	// Handle processor exceptions.
-	// LAB 3: Your code here.
+
+	switch (tf->tf_trapno) {
+		case T_PGFLT: page_fault_handler(tf); return;
+		case T_BRKPT: monitor(tf); return;
+		case T_SYSCALL:
+			curenv->env_tf.tf_regs.reg_eax = syscall(tf->tf_regs.reg_eax,
+			                                         tf->tf_regs.reg_edx,
+			                                         tf->tf_regs.reg_ecx,
+			                                         tf->tf_regs.reg_ebx,
+			                                         tf->tf_regs.reg_edi,
+			                                         tf->tf_regs.reg_esi);
+			return;
+		default:
+			break;
+	}
 
 	// Handle spurious interrupts
 	// The hardware sometimes raises these because of noise on the
@@ -267,7 +324,9 @@ page_fault_handler(struct Trapframe *tf)
 
 	// Handle kernel-mode page faults.
 
-	// LAB 3: Your code here.
+	if (tf->tf_cs == GD_KT) {
+		panic("kernel-mode page fault");
+	}
 
 	// We've already handled kernel-mode exceptions, so if we get here,
 	// the page fault happened in user mode.
