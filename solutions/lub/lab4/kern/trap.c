@@ -65,13 +65,27 @@ static const char *trapname(int trapno)
 	return "(unknown trap)";
 }
 
+extern void (*handlers_array[])();
+void handler48();
 
 void
 trap_init(void)
 {
 	extern struct Segdesc gdt[];
 
-	// LAB 3: Your code here.
+	for (int i = 0; i < 20; i++) {
+		if (i == 9 || i == 15) {
+			continue;
+		}
+
+		if (i == T_BRKPT) {
+			SETGATE(idt[i], false, GD_KT, handlers_array[i], 3);
+		} else {
+			SETGATE(idt[i], false, GD_KT, handlers_array[i], 0);
+		}
+	}
+
+	SETGATE(idt[48], false, GD_KT, handler48, 3);
 
 	// Per-CPU setup 
 	trap_init_percpu();
@@ -171,8 +185,24 @@ print_regs(struct PushRegs *regs)
 static void
 trap_dispatch(struct Trapframe *tf)
 {
-	// Handle processor exceptions.
-	// LAB 3: Your code here.
+	switch(tf->tf_trapno) {
+		case T_PGFLT:
+			page_fault_handler(tf);
+			return;
+
+		case T_BRKPT:
+			monitor(tf);
+			return;
+
+		case T_SYSCALL: {
+			struct PushRegs *regs = &tf->tf_regs;
+			int32_t res = syscall(regs->reg_eax, regs->reg_edx,
+						regs->reg_ecx, regs->reg_ebx,
+						regs->reg_edi, regs->reg_esi);
+			regs->reg_eax = res;
+			return;
+		}
+	}
 
 	// Handle spurious interrupts
 	// The hardware sometimes raises these because of noise on the
@@ -200,6 +230,7 @@ trap_dispatch(struct Trapframe *tf)
 void
 trap(struct Trapframe *tf)
 {
+
 	// The environment may have set DF and some versions
 	// of GCC rely on DF being clear
 	asm volatile("cld" ::: "cc");
@@ -247,6 +278,10 @@ trap(struct Trapframe *tf)
 	// Dispatch based on what type of trap occurred
 	trap_dispatch(tf);
 
+	// Return to the current environment, which should be running.
+	assert(curenv && curenv->env_status == ENV_RUNNING);
+	env_run(curenv);
+
 	// If we made it to this point, then no other environment was
 	// scheduled, so we should return to the current environment
 	// if doing so makes sense.
@@ -267,7 +302,9 @@ page_fault_handler(struct Trapframe *tf)
 
 	// Handle kernel-mode page faults.
 
-	// LAB 3: Your code here.
+	if ((tf->tf_cs & 3) == 0) {
+		panic("page fault in kernel-mode");
+	}
 
 	// We've already handled kernel-mode exceptions, so if we get here,
 	// the page fault happened in user mode.
