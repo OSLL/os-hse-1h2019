@@ -259,9 +259,12 @@ mem_init_mp(void)
 	//             it will fault rather than overwrite another CPU's stack.
 	//             Known as a "guard page".
 	//     Permissions: kernel RW, user NONE
-	//
-	// LAB 4: Your code here:
 
+	for (int i = 0; i < NCPU; ++i) {
+		uintptr_t kstacktop_i = KSTACKTOP - i * (KSTKSIZE + KSTKGAP);
+		boot_map_region(kern_pgdir, kstacktop_i - KSTKSIZE, 
+				KSTKSIZE, PADDR(percpu_kstacks[i]), PTE_W);
+	}
 }
 
 // --------------------------------------------------------------
@@ -279,7 +282,7 @@ mem_init_mp(void)
 void
 page_init(void)
 {
-	// LAB 4:
+	// LAB 4: (done)
 	// Change your code to mark the physical page at MPENTRY_PADDR
 	// as in use
 
@@ -305,8 +308,10 @@ page_init(void)
 	physaddr_t phys_free_mem_begin = PADDR(boot_alloc(0));
 
 	for (i = 0; i < npages; i++) {
-		if (i == 0 || (PGNUM(IOPHYSMEM) <= i
-			      && i < PGNUM(phys_free_mem_begin))) {
+		if (i == 0 
+			|| (PGNUM(IOPHYSMEM) <= i && i < PGNUM(phys_free_mem_begin))
+			|| page2pa(pages + i) == MPENTRY_PADDR) {
+
 			pages[i].pp_ref = 1;
 			pages[i].pp_link = NULL;
 		} else {
@@ -571,9 +576,16 @@ mmio_map_region(physaddr_t pa, size_t size)
 	// okay to simply panic if this happens).
 	//
 	// Hint: The staff solution uses boot_map_region.
-	//
-	// Your code here:
-	panic("mmio_map_region not implemented");
+	
+	size = ROUNDUP(size, PGSIZE);
+	if (base + size > MMIOLIM) {
+		panic("mmio_map_region MMIOLIM overflow");
+	}
+
+	boot_map_region(kern_pgdir, base, size, pa, PTE_PCD | PTE_PWT | PTE_W);
+	base += size;
+	return (void*)(base - size);
+
 }
 
 static uintptr_t user_mem_check_addr;
