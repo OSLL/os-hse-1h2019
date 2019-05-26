@@ -215,7 +215,8 @@ mem_init(void)
 	// The diagram in inc/memlayout.h shows multiple kernel stacks, one per CPU,
 	// but the description above only considers one. Map only one, should probably
 	// be what is wanted.
-	boot_map_region(kern_pgdir, KSTACKTOP-KSTKSIZE, KSTKSIZE, PADDR(bootstack), PTE_W);
+	// Now mem_init_mp does that
+	//boot_map_region(kern_pgdir, KSTACKTOP-KSTKSIZE, KSTKSIZE, PADDR(bootstack), PTE_W);
 
 	//////////////////////////////////////////////////////////////////////
 	// Map all of physical memory at KERNBASE.
@@ -276,9 +277,14 @@ mem_init_mp(void)
 	//             it will fault rather than overwrite another CPU's stack.
 	//             Known as a "guard page".
 	//     Permissions: kernel RW, user NONE
-	//
-	// LAB 4: Your code here:
 
+	for (int i = 0; i < NCPU; i++) {
+		boot_map_region(kern_pgdir,
+		                KSTACKTOP - i * (KSTKSIZE + KSTKGAP) - KSTKSIZE, 
+		                KSTKSIZE,
+		                (physaddr_t)PADDR(percpu_kstacks[i]),
+		                PTE_W);
+	}
 }
 
 // --------------------------------------------------------------
@@ -320,6 +326,10 @@ page_init(void)
 	size_t i;
 	// skip page with index 0
 	for (i = 1; i < npages; i++) {
+		// skip the page at MPENTRY_PADDR
+		if (i == MPENTRY_PADDR / PGSIZE) {
+			i++;
+		}
 		// the memory in [EXTPHYSMEM, PADDR(end)) is occupied by kernel ELF
 		// and the memory in [PARRD(end), PADDR(boot_alloc(0))) was already used
 		if (i == (IOPHYSMEM / PGSIZE)) {
@@ -577,11 +587,16 @@ mmio_map_region(physaddr_t pa, size_t size)
 	// Be sure to round size up to a multiple of PGSIZE and to
 	// handle if this reservation would overflow MMIOLIM (it's
 	// okay to simply panic if this happens).
-	//
-	// Hint: The staff solution uses boot_map_region.
-	//
-	// Your code here:
-	panic("mmio_map_region not implemented");
+
+	assert(PGOFF(pa) == 0);
+	size = ROUNDUP(size, PGSIZE);
+	if (MMIOLIM - base < size) {
+		panic("mmio_map_region: no space left in virtual memory");
+	}
+	boot_map_region(kern_pgdir, base, size, pa, PTE_PCD | PTE_PWT | PTE_W);
+	void *start = (void*)base;
+	base += size;
+	return start;
 }
 
 static uintptr_t user_mem_check_addr;

@@ -67,13 +67,31 @@ TRAPHANDLER_NOEC( simderr_interrupt_handler, T_SIMDERR)
 
 TRAPHANDLER_NOEC( syscall_interrupt_handler, T_SYSCALL)
 
+TRAPHANDLER_NOEC( irq_handler_0,  IRQ_OFFSET + 0 )
+TRAPHANDLER_NOEC( irq_handler_1,  IRQ_OFFSET + 1 )
+TRAPHANDLER_NOEC( irq_handler_2,  IRQ_OFFSET + 2 )
+TRAPHANDLER_NOEC( irq_handler_3,  IRQ_OFFSET + 3 )
+TRAPHANDLER_NOEC( irq_handler_4,  IRQ_OFFSET + 4 )
+TRAPHANDLER_NOEC( irq_handler_5,  IRQ_OFFSET + 5 )
+TRAPHANDLER_NOEC( irq_handler_6,  IRQ_OFFSET + 6 )
+TRAPHANDLER_NOEC( irq_handler_7,  IRQ_OFFSET + 7 )
+TRAPHANDLER_NOEC( irq_handler_8,  IRQ_OFFSET + 8 )
+TRAPHANDLER_NOEC( irq_handler_9,  IRQ_OFFSET + 9 )
+TRAPHANDLER_NOEC( irq_handler_10, IRQ_OFFSET + 10)
+TRAPHANDLER_NOEC( irq_handler_11, IRQ_OFFSET + 11)
+TRAPHANDLER_NOEC( irq_handler_12, IRQ_OFFSET + 12)
+TRAPHANDLER_NOEC( irq_handler_13, IRQ_OFFSET + 13)
+TRAPHANDLER_NOEC( irq_handler_14, IRQ_OFFSET + 14)
+TRAPHANDLER_NOEC( irq_handler_15, IRQ_OFFSET + 15)
+
 _alltraps:
 	push %es
 	push %ds
 	pushal
-	mov $(GD_KD), %ax
-	mov %ax, %ds
-	mov %ax, %es
+	pushl $(GD_KD)
+	pushl $(GD_KD)
+	popl %ds
+	popl %es
 	pushl %esp
 	call trap
 

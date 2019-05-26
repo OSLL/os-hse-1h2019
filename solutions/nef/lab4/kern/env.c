@@ -255,7 +255,7 @@ env_alloc(struct Env **newenv_store, envid_t parent_id)
 	// You will set e->env_tf.tf_eip later.
 
 	// Enable interrupts while in user mode.
-	// LAB 4: Your code here.
+	e->env_tf.tf_eflags |= FL_IF;
 
 	// Clear the page fault handler until user installs one.
 	e->env_pgfault_upcall = 0;
@@ -373,6 +373,8 @@ load_icode(struct Env *e, uint8_t *binary, size_t size)
 	page_insert(e->env_pgdir, stack_page, (void*)(USTACKTOP - PGSIZE), PTE_W | PTE_U);
 
 	e->env_tf.tf_eip = elf->e_entry;
+
+	lcr3(PADDR(kern_pgdir));
 }
 
 //
@@ -526,6 +528,7 @@ env_run(struct Env *e)
 	curenv = e;
 	curenv->env_status = ENV_RUNNING;
 	++curenv->env_runs;
+	unlock_kernel();
 	lcr3(PADDR(curenv->env_pgdir));
 	env_pop_tf(&curenv->env_tf);
 }
