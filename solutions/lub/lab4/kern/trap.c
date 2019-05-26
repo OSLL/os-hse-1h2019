@@ -65,7 +65,8 @@ static const char *trapname(int trapno)
 	return "(unknown trap)";
 }
 
-extern void (*handlers_array[])();
+extern void (*proc_excep_handlers[])();
+extern void (*irq_handlers[])();
 void handler48();
 
 void
@@ -79,14 +80,18 @@ trap_init(void)
 		}
 
 		if (i == T_BRKPT) {
-			SETGATE(idt[i], false, GD_KT, handlers_array[i], 3);
+			SETGATE(idt[i], false, GD_KT, proc_excep_handlers[i], 3);
 		} else {
-			SETGATE(idt[i], false, GD_KT, handlers_array[i], 0);
+			SETGATE(idt[i], false, GD_KT, proc_excep_handlers[i], 0);
 		}
 	}
 
 	SETGATE(idt[48], false, GD_KT, handler48, 3);
-
+	
+	for (int i = 0; i < 16; i++) {
+		SETGATE(idt[IRQ_OFFSET + i], false, GD_KT, irq_handlers[i], 0);
+	}
+	
 	// Per-CPU setup 
 	trap_init_percpu();
 }
@@ -215,7 +220,11 @@ trap_dispatch(struct Trapframe *tf)
 
 	// Handle clock interrupts. Don't forget to acknowledge the
 	// interrupt using lapic_eoi() before calling the scheduler!
-	// LAB 4: Your code here.
+	if (tf->tf_trapno == IRQ_OFFSET + IRQ_TIMER) {
+		lapic_eoi();
+		sched_yield();
+		return;
+	}
 
 	// Unexpected trap: The user process or the kernel has a bug.
 	print_trapframe(tf);

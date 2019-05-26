@@ -331,8 +331,55 @@ sys_page_unmap(envid_t envid, void *va)
 static int
 sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 {
-	// LAB 4: Your code here.
-	panic("sys_ipc_try_send not implemented");
+	struct Env *env;
+       	int code = envid2env(envid, &env, 0);
+	if (code < 0) {
+		return code;
+	}
+
+	if (!env->env_ipc_recving) {
+		return -E_IPC_NOT_RECV;
+	}
+	
+
+	if ((uint32_t)srcva < UTOP 
+			&& (uint32_t)env->env_ipc_dstva < UTOP) {
+
+		if (ROUNDUP(srcva, PGSIZE) != srcva) {
+			return -E_INVAL;
+		}
+		
+		if ((perm | PTE_AVAIL | PTE_W) != PTE_SYSCALL) {
+			return -E_INVAL;
+		}
+
+		pte_t *pte;
+		struct PageInfo *page = page_lookup(curenv->env_pgdir, srcva, &pte);
+		if (!page) {
+			return -E_INVAL;
+		}
+
+		if ((perm & PTE_W) && !(*pte & PTE_W)) {
+			return -E_INVAL;
+		}
+
+		code = page_insert(env->env_pgdir, page, env->env_ipc_dstva, perm);
+		if (code < 0) {
+			return code;
+		}
+
+		env->env_ipc_perm = perm;
+	} else {
+		env->env_ipc_perm = 0;
+	}
+
+	env->env_ipc_recving = 0;
+	env->env_ipc_from = curenv->env_id;
+	env->env_ipc_value = value;
+	env->env_tf.tf_regs.reg_eax = 0;
+	env->env_status = ENV_RUNNABLE;
+	
+	return 0;
 }
 
 // Block until a value is ready.  Record that you want to receive
@@ -349,8 +396,15 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 static int
 sys_ipc_recv(void *dstva)
 {
-	// LAB 4: Your code here.
-	panic("sys_ipc_recv not implemented");
+	if ((uint32_t)dstva < UTOP && ROUNDUP(dstva, PGSIZE) != dstva) {
+		return -E_INVAL;
+	}
+
+	curenv->env_ipc_recving = true;
+	curenv->env_ipc_dstva = dstva;
+	curenv->env_status = ENV_NOT_RUNNABLE;
+	sched_yield();
+
 	return 0;
 }
 
@@ -395,6 +449,12 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 
 		case SYS_page_unmap:
 			return sys_page_unmap(a1, (void*)a2);
+		
+		case SYS_ipc_try_send: 
+			return sys_ipc_try_send(a1, a2, (void*)a3, a4);
+
+		case SYS_ipc_recv:
+			return sys_ipc_recv((void*)a1);
 	}
 	return -E_INVAL;
 }

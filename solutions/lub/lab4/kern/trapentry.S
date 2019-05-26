@@ -70,9 +70,29 @@ TRAPHANDLER_NOEC_FROM_NUM(19)
 
 TRAPHANDLER_NOEC_FROM_NUM(48)
 
+//IRQ
+
+TRAPHANDLER_NOEC_FROM_NUM(32)
+TRAPHANDLER_NOEC_FROM_NUM(33)
+TRAPHANDLER_NOEC_FROM_NUM(34)
+TRAPHANDLER_NOEC_FROM_NUM(35)
+TRAPHANDLER_NOEC_FROM_NUM(36)
+TRAPHANDLER_NOEC_FROM_NUM(37)
+TRAPHANDLER_NOEC_FROM_NUM(38)
+TRAPHANDLER_NOEC_FROM_NUM(39)
+TRAPHANDLER_NOEC_FROM_NUM(40)
+TRAPHANDLER_NOEC_FROM_NUM(41)
+TRAPHANDLER_NOEC_FROM_NUM(42)
+TRAPHANDLER_NOEC_FROM_NUM(43)
+TRAPHANDLER_NOEC_FROM_NUM(44)
+TRAPHANDLER_NOEC_FROM_NUM(45)
+TRAPHANDLER_NOEC_FROM_NUM(46)
+TRAPHANDLER_NOEC_FROM_NUM(47)
+
+
 .data
-.globl handlers_array
-handlers_array:
+.globl proc_excep_handlers
+proc_excep_handlers:
 	.long handler0
 	.long handler1
 	.long handler2
@@ -93,6 +113,26 @@ handlers_array:
 	.long handler17
 	.long handler18
 	.long handler19
+
+.data
+.globl irq_handlers
+irq_handlers:
+	.long handler32	
+	.long handler33
+	.long handler34
+	.long handler35
+	.long handler36
+	.long handler37
+	.long handler38
+	.long handler39
+	.long handler40
+	.long handler41
+	.long handler42
+	.long handler43
+	.long handler44
+	.long handler45
+	.long handler46
+	.long handler47
 
 _alltraps:
 	pushl %ds
