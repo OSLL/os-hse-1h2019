@@ -1,0 +1,4 @@
+Usage:
+Use "make pp1", "make pp2" t create pipes
+"make c1", "make c2" to start clients
+
