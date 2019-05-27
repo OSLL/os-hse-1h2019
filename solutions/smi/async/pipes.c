@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
         }
         if (FD_ISSET(fd_in, &readfds)) {
             char buf[bytes_n];
-            read_data(fd_in, buf, 100);
+            read_data(fd_in, buf, bytes_n);
         }
     }
 }
