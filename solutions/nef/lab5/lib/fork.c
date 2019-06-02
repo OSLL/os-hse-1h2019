@@ -70,6 +70,14 @@ duppage(envid_t envid, unsigned pn)
 {
 	int ret;
 	void *page_start = (void*)(pn * PGSIZE);
+	if (uvpt[pn] & PTE_SHARE) {
+		ret = sys_page_map(0, page_start, envid, page_start, uvpt[pn] & PTE_SYSCALL);
+		if (ret < 0) {
+			return ret;
+		}
+		return 0;
+	}
+
 	int cow = (uvpt[pn] & PTE_W) || (uvpt[pn] & PTE_COW);
 	int perms = PTE_P | PTE_U;
 	if (cow) {
