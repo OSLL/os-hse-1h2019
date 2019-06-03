@@ -10,6 +10,10 @@
 # exceptions/interrupts
 ###################################################################
 
+#define PROCESSOR(N) PROCESSOR##N
+#define TRAP_PROC(N) TRAPHANDLER(PROCESSOR(N), N)
+#define TRAP_NOEC(N) TRAPHANDLER_NOEC(PROCESSOR(N), N)
+
 /* TRAPHANDLER defines a globally-visible function for handling a trap.
  * It pushes a trap number onto the stack, then jumps to _alltraps.
  * Use TRAPHANDLER for traps where the CPU automatically pushes an error code.
@@ -43,13 +47,42 @@
 
 .text
 
+
 /*
  * Lab 3: Your code here for generating entry points for the different traps.
  */
 
-
+TRAP_NOEC(0)
+TRAP_NOEC(1)
+TRAP_NOEC(2)
+TRAP_NOEC(3)
+TRAP_NOEC(4)
+TRAP_NOEC(5)
+TRAP_NOEC(6)
+TRAP_NOEC(7)
+TRAP_PROC(8)
+TRAP_PROC(10)
+TRAP_PROC(11)
+TRAP_PROC(12)
+TRAP_PROC(13)
+TRAP_PROC(14)
+TRAP_NOEC(16)
+TRAP_PROC(17)
+TRAP_NOEC(18)
+TRAP_NOEC(19)
+TRAP_NOEC(48)
 
 /*
  * Lab 3: Your code here for _alltraps
  */
 
+.global _alltraps
+_alltraps:
+    pushl %ds
+    pushl %es
+    pushal
+    movl $GD_KD, %eax
+    movl %eax, %ds
+    movl %eax, %es
+    pushl %esp
+    call trap
