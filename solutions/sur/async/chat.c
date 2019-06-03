@@ -8,7 +8,7 @@
 #include <sys/select.h>
 #include <limits.h>
 
-const int N = 256;
+#define N 256
 
 int fd; 
 char *fifo = "/tmp/fifo"; 
