@@ -370,10 +370,7 @@ load_icode(struct Env *e, uint8_t *binary, size_t size)
 	    memset((void *)(ph->p_va + ph->p_filesz), 0, ph->p_memsz - ph->p_filesz);
 	}
 	lcr3(PADDR(kern_pgdir));
-
-	// e->env_tf.tf_ss = USTACKTOP;
-	// e->env_tf.tf_cs = hdr->e_entry;
-
+	
 	// Now map one page for the program's initial stack
 	// at virtual address USTACKTOP - PGSIZE.
 
