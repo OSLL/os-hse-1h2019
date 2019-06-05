@@ -58,6 +58,31 @@ static const char *trapname(int trapno)
 	return "(unknown trap)";
 }
 
+#define HANDLER(N) handler_##N
+#define S(TN, PL) SETGATE(idt[TN], 0, GD_KT, HANDLER(TN), PL)
+
+extern void handler_0();
+extern void handler_1();
+extern void handler_2();
+extern void handler_3();
+extern void handler_4();
+extern void handler_5();
+extern void handler_6();
+extern void handler_7();
+extern void handler_8();
+
+extern void handler_10();
+extern void handler_11();
+extern void handler_12();
+extern void handler_13();
+extern void handler_14();
+
+extern void handler_16();
+extern void handler_17();
+extern void handler_18();
+extern void handler_19();
+extern void handler_48();
+
 
 void
 trap_init(void)
@@ -65,6 +90,27 @@ trap_init(void)
 	extern struct Segdesc gdt[];
 
 	// LAB 3: Your code here.
+    
+    S(T_DIVIDE, 0);
+    S(T_DEBUG, 0);
+    S(T_NMI, 0);
+    S(T_BRKPT, 3);
+    S(T_OFLOW, 0);
+    S(T_BOUND, 0); 
+    S(T_ILLOP, 0);
+    S(T_DEVICE, 0);
+    S(T_DBLFLT, 0);
+    S(T_TSS, 0); 
+    S(T_SEGNP, 0);
+    S(T_STACK, 0);
+    S(T_GPFLT, 0);
+    S(T_PGFLT, 0);
+    S(T_FPERR, 0);
+    S(T_ALIGN, 0);
+    S(T_MCHK, 0);  
+    S(T_SIMDERR, 0);
+    S(T_SYSCALL, 3);
+    
 
 	// Per-CPU setup 
 	trap_init_percpu();
@@ -143,6 +189,25 @@ trap_dispatch(struct Trapframe *tf)
 {
 	// Handle processor exceptions.
 	// LAB 3: Your code here.
+    
+    switch (tf->tf_trapno){
+        case T_PGFLT:
+            page_fault_handler(tf); 
+            break;
+
+        case T_BRKPT:
+            monitor(tf);
+            break;
+
+        case T_SYSCALL:
+            tf->tf_regs.reg_eax = syscall(tf->tf_regs.reg_eax, tf->tf_regs.reg_edx, tf->tf_regs.reg_ecx, 
+                    tf->tf_regs.reg_ebx, tf->tf_regs.reg_edi, tf->tf_regs.reg_esi);
+            break;
+
+
+
+       default:
+
 
 	// Unexpected trap: The user process or the kernel has a bug.
 	print_trapframe(tf);
@@ -152,6 +217,7 @@ trap_dispatch(struct Trapframe *tf)
 		env_destroy(curenv);
 		return;
 	}
+    }
 }
 
 void
@@ -204,6 +270,9 @@ page_fault_handler(struct Trapframe *tf)
 	// Handle kernel-mode page faults.
 
 	// LAB 3: Your code here.
+    if ((tf->tf_cs & GD_KT) == 0) {
+        panic("page fault happened in kernel mode");
+    }
 
 	// We've already handled kernel-mode exceptions, so if we get here,
 	// the page fault happened in user mode.
