@@ -4,7 +4,8 @@
 #include <inc/memlayout.h>
 #include <inc/trap.h>
 
-
+#define T(N) TRAPHANDLER(handler_##N, N)
+#define TN(N) TRAPHANDLER_NOEC(handler_##N, N)
 
 ###################################################################
 # exceptions/interrupts
@@ -47,9 +48,39 @@
  * Lab 3: Your code here for generating entry points for the different traps.
  */
 
-
+TN(0)
+TN(1)
+TN(2)
+TN(3)
+TN(4)
+TN(5)
+TN(6)
+TN(7)
+T(8)
+T(10)
+T(11)
+T(12)
+T(13)
+T(14)
+TN(16)
+T(17)
+TN(18)
+TN(19)
+TN(48)
 
 /*
  * Lab 3: Your code here for _alltraps
  */
 
+.globl _alltraps
+_alltraps:
+	pushl %ds
+	pushl %es
+	pushal 
+	
+	movw $GD_KD, %ax
+	movw %ax, %ds
+	movw %ax, %es
+
+	pushl %esp
+	call trap
