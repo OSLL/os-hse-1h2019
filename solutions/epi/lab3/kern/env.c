@@ -6,7 +6,6 @@
 #include <inc/string.h>
 #include <inc/assert.h>
 #include <inc/elf.h>
-#include <inc/stdio.h>
 
 #include <kern/env.h>
 #include <kern/pmap.h>
@@ -371,7 +370,6 @@ load_icode(struct Env *e, uint8_t *binary, size_t size)
 	    memset((void *)(ph->p_va + ph->p_filesz), 0, ph->p_memsz - ph->p_filesz);
 	}
 	lcr3(PADDR(kern_pgdir));
-	cprintf("copied\n");
 
 	// e->env_tf.tf_ss = USTACKTOP;
 	// e->env_tf.tf_cs = hdr->e_entry;
@@ -398,7 +396,6 @@ env_create(uint8_t *binary, size_t size, enum EnvType type)
 	struct Env *e;
 	int ret = env_alloc(&e, 0);
 	if (ret < 0) {
-	    cprintf("aaa");
 	    panic("cant alloc env");
 	}
 	e->env_type = type;

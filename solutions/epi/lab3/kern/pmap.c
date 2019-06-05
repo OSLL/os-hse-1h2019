@@ -431,15 +431,6 @@ page_decref(struct PageInfo* pp)
 pte_t *
 pgdir_walk(pde_t *pgdir, const void *va, int create)
 {
-	// pte_t* p;
-	// pgdir = &pgdir[PDX(va)];
-	// if (!(*pgdir & PTE_P))
-	//     return ~0;
-	// p = (pte_t*)KADDR(PTE_ADDR(*pgdir));
-	// if (!(p[PTX(va)] & PTE_P))
-	//     return ~0;
-	// return PTE_ADDR(p[PTX(va)]);
-
 	pte_t* p;
 	pgdir = &pgdir[PDX(va)];
 	if (!(*pgdir & PTE_P)) {
