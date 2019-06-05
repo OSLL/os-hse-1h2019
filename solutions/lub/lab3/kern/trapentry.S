@@ -43,13 +43,67 @@
 
 .text
 
-/*
- * Lab 3: Your code here for generating entry points for the different traps.
- */
+#define TRAPHANDLER_FROM_NUM(num) TRAPHANDLER(handler ## num, num)
+#define TRAPHANDLER_NOEC_FROM_NUM(num) TRAPHANDLER_NOEC(handler ## num, num)
 
+TRAPHANDLER_NOEC_FROM_NUM(0)
+TRAPHANDLER_NOEC_FROM_NUM(1)
+TRAPHANDLER_NOEC_FROM_NUM(2)
+TRAPHANDLER_NOEC_FROM_NUM(3)
+TRAPHANDLER_NOEC_FROM_NUM(4)
+TRAPHANDLER_NOEC_FROM_NUM(5)
+TRAPHANDLER_NOEC_FROM_NUM(6)
+TRAPHANDLER_NOEC_FROM_NUM(7)
+TRAPHANDLER_FROM_NUM(8)
 
+TRAPHANDLER_FROM_NUM(10)
+TRAPHANDLER_FROM_NUM(11)
+TRAPHANDLER_FROM_NUM(12)
+TRAPHANDLER_FROM_NUM(13)
+TRAPHANDLER_FROM_NUM(14)
 
-/*
- * Lab 3: Your code here for _alltraps
- */
+TRAPHANDLER_NOEC_FROM_NUM(16)
+TRAPHANDLER_FROM_NUM(17)
+TRAPHANDLER_NOEC_FROM_NUM(18)
+TRAPHANDLER_NOEC_FROM_NUM(19)
 
+TRAPHANDLER_NOEC_FROM_NUM(48)
+
+.data
+.globl handlers_array
+handlers_array: 
+	.long handler0                       
+	.long handler1
+	.long handler2
+	.long handler3
+	.long handler4
+	.long handler5
+	.long handler6
+	.long handler7
+	.long handler8
+	.long 0
+	.long handler10
+	.long handler11
+	.long handler12
+	.long handler13
+	.long handler14
+	.long 0
+	.long handler16
+	.long handler17
+	.long handler18
+	.long handler19
+
+_alltraps:
+	pushl %ds
+	pushl %es
+	pushal
+	
+	pushl $GD_KD
+	pushl $GD_KD
+	popl %ds
+	popl %es
+
+	pushl %esp
+
+	call trap
+	
