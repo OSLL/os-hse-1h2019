@@ -192,13 +192,6 @@ env_setup_vm(struct Env *e)
 	e->env_pgdir = (pde_t*) page2kva(p);
 	memcpy(e->env_pgdir, kern_pgdir, PGSIZE);
 
-	// memset(e->env_pgdir, 0, PGSIZE);
-
-	// boot_map_region(e->env_pgdir, UENVS, PTSIZE, PADDR(envs), PTE_U);
-	// boot_map_region(e->env_pgdir, UPAGES, PTSIZE, PADDR(pages), PTE_U);
-	// boot_map_region(e->env_pgdir, KSTACKTOP - KSTKSIZE, KSTKSIZE, PADDR(bootstack), PTE_W);
-	// boot_map_region(e->env_pgdir, KERNBASE, -KERNBASE, 0, PTE_W);
-
 	// UVPT maps the env's own page table read-only.
 	// Permissions: kernel R, user R
 	e->env_pgdir[PDX(UVPT)] = PADDR(e->env_pgdir) | PTE_P | PTE_U;

@@ -390,11 +390,6 @@ pgdir_walk(pde_t *pgdir, const void *va, int create)
 	uintptr_t dir = PDX(va);
 	uintptr_t tab = PTX(va);
 
-	// cprintf("la: %x\n", va);
-	// cprintf("dir: %x\n", dir);
-	// cprintf("tab: %x\n", tab);
-	// cprintf("PDE: %x\n", pgdir[dir]);
-	
 	uint32_t dir_entry = pgdir[dir];
 	if (!(dir_entry & PTE_P)) {
 		if (!create)
