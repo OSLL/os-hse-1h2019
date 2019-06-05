@@ -20,7 +20,8 @@ sys_cputs(const char *s, size_t len)
 	// Check that the user has permission to read memory [s, s+len).
 	// Destroy the environment if not.
 
-	// LAB 3: Your code here.
+	// LAB 3: My code is here.
+	user_mem_assert(curenv, s, len, PTE_W | PTE_U);
 
 	// Print the string supplied by the user.
 	cprintf("%.*s", len, s);
@@ -68,8 +69,21 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 {
 	// Call the function corresponding to the 'syscallno' parameter.
 	// Return any appropriate return value.
-	// LAB 3: Your code here.
+	// LAB 3: My code is here.
+	// panic("syscall not implemented");
 
-	panic("syscall not implemented");
+	int32_t result = 0;
+	if (syscallno == SYS_cputs) {
+		sys_cputs((char *)a1, a2);
+	} else if (syscallno == SYS_cgetc) {
+		result = sys_cgetc();
+	} else if (syscallno == SYS_getenvid) {
+		result = sys_getenvid();
+	} else if (syscallno == SYS_env_destroy) {
+		result = sys_env_destroy(a1);
+	} else {
+		result = -E_INVAL;
+	}
+	return result;
 }
 
