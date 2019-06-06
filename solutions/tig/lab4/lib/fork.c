@@ -25,6 +25,9 @@ pgfault(struct UTrapframe *utf)
 	//   (see <inc/memlayout.h>).
 
 	// LAB 4: Your code here.
+	if (!(err & FEC_WR) || !(uvpt[PGNUM(addr)] & PTE_COW)) {
+		panic("pgfault exception");
+	}
 
 	// Allocate a new page, map it at a temporary location (PFTEMP),
 	// copy the data from the old page to the new page, then move the new
@@ -35,7 +38,19 @@ pgfault(struct UTrapframe *utf)
 
 	// LAB 4: Your code here.
 
-	panic("pgfault not implemented");
+	if (sys_page_alloc(0, (void *)PFTEMP, PTE_P | PTE_U | PTE_W) < 0) {
+		panic("pgfault exception");
+	}
+
+	addr = ROUNDDOWN(addr, PGSIZE);
+	memcpy((void *)PFTEMP, addr, PGSIZE);
+	if (sys_page_map(0, PFTEMP, 0, addr, PTE_P | PTE_U | PTE_W) < 0) {
+		panic("pgfault exception");		
+	}
+	
+	if (sys_page_unmap(0, PFTEMP) < 0) {
+		panic("pgfault exception");		
+	}
 }
 
 //
@@ -55,7 +70,24 @@ duppage(envid_t envid, unsigned pn)
 	int r;
 
 	// LAB 4: Your code here.
-	panic("duppage not implemented");
+	void* page_va = (void *)(pn * PGSIZE);
+
+	if ((uvpt[pn] & PTE_W) || (uvpt[pn] & PTE_COW)) {
+		r = sys_page_map(thisenv->env_id, page_va, envid, page_va, PTE_P | PTE_U | PTE_COW);
+		if (r < 0) {
+			return r;
+		}
+
+		r = sys_page_map(thisenv->env_id, page_va, thisenv->env_id, page_va, PTE_P | PTE_U | PTE_COW);
+		if (r < 0) {
+			return r;
+		}
+	} else {
+		r = sys_page_map(thisenv->env_id, page_va, envid, page_va, PTE_P | PTE_U);
+		if (r < 0) {
+			return r;
+		}
+	}
 	return 0;
 }
 
@@ -79,7 +111,38 @@ envid_t
 fork(void)
 {
 	// LAB 4: Your code here.
-	panic("fork not implemented");
+	set_pgfault_handler(pgfault);
+
+	envid_t child = sys_exofork();
+	if (child < 0) {
+		return child;
+	}
+	if (child == 0) {
+		thisenv = &envs[ENVX(sys_getenvid())];
+		return 0;
+	}
+	
+	int result;
+	for (int i = 0; i < USTACKTOP / PGSIZE; ++i) {
+		uintptr_t va = i * PGSIZE;
+		if ((uvpd[PDX(va)] & PTE_P) && (uvpt[i] & PTE_P) && (uvpt[i] & PTE_U) && (uvpt[i] & (PTE_W | PTE_COW))) {
+			if ((result = duppage(child, i)) < 0) {
+				return result;
+			}
+		}
+	}
+	
+	if ((result = sys_page_alloc(child, (void *)(UXSTACKTOP - PGSIZE), PTE_P | PTE_U | PTE_W)) < 0) {
+		return result;
+	}	
+	if ((result = sys_env_set_pgfault_upcall(child, thisenv->env_pgfault_upcall)) < 0) {
+		return result;
+	}
+	if ((result = sys_env_set_status(child, ENV_RUNNABLE)) < 0) {
+		return result;
+	}
+
+	return child;
 }
 
 // Challenge!
