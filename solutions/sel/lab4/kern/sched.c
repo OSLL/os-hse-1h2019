@@ -28,7 +28,24 @@ sched_yield(void)
 	// no runnable environments, simply drop through to the code
 	// below to halt the cpu.
 
-	// LAB 4: Your code here.
+	size_t start = 0;
+	if (curenv != NULL)
+	{
+		start = ENVX(curenv->env_id);
+	}
+
+	for (int i = start; i < start + NENV; i++)
+	{
+		if (envs[i % NENV].env_status == ENV_RUNNABLE)
+		{
+			env_run(&envs[i % NENV]);
+		}
+	}
+
+	if (curenv != NULL && curenv->env_status == ENV_RUNNING)
+	{
+		env_run(curenv);
+	}	
 
 	// sched_halt never returns
 	sched_halt();
@@ -46,7 +63,8 @@ sched_halt(void)
 	// environments in the system, then drop into the kernel monitor.
 	for (i = 0; i < NENV; i++) {
 		if ((envs[i].env_status == ENV_RUNNABLE ||
-		     envs[i].env_status == ENV_RUNNING))
+		     envs[i].env_status == ENV_RUNNING ||
+			envs[i].env_status == ENV_DYING))
 			break;
 	}
 	if (i == NENV) {
