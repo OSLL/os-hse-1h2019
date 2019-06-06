@@ -58,6 +58,26 @@ static const char *trapname(int trapno)
 	return "(unknown trap)";
 }
 
+void divide_error();
+void debug_exception();
+void non_maskable_interrupt();
+void breakpoint2();
+void overflow();
+void bounds_check();
+void illegal_opcode();
+void device_not_available();
+void double_fault();
+void invalid_task_switch_segment();
+void segment_not_present();
+void stack_exception();
+void general_protection_fault();
+void page_fault();
+void floating_point_error();
+void aligment_check();
+void machine_check();
+void SIMD_floating_point_error();
+void sysctem_call();
+void catchall();
 
 void
 trap_init(void)
@@ -65,6 +85,26 @@ trap_init(void)
 	extern struct Segdesc gdt[];
 
 	// LAB 3: Your code here.
+	SETGATE(idt[T_DIVIDE],	0, GD_KT, divide_error					, 0);
+	SETGATE(idt[T_DEBUG],	0, GD_KT, debug_exception				, 0);
+	SETGATE(idt[T_NMI],		0, GD_KT, non_maskable_interrupt		, 0);
+	SETGATE(idt[T_BRKPT],	1, GD_KT, breakpoint2					, 3);
+	SETGATE(idt[T_OFLOW],	0, GD_KT, overflow						, 0);
+	SETGATE(idt[T_BOUND],	0, GD_KT, bounds_check					, 0);
+	SETGATE(idt[T_ILLOP],	0, GD_KT, illegal_opcode				, 0);
+	SETGATE(idt[T_DEVICE],	0, GD_KT, device_not_available			, 0);
+	SETGATE(idt[T_DBLFLT],	0, GD_KT, double_fault					, 0);
+	SETGATE(idt[T_TSS],	 	0, GD_KT, invalid_task_switch_segment	, 0);
+	SETGATE(idt[T_SEGNP],	0, GD_KT, segment_not_present			, 0);
+	SETGATE(idt[T_STACK],	0, GD_KT, stack_exception				, 0);
+	SETGATE(idt[T_GPFLT],	0, GD_KT, general_protection_fault		, 0);
+	SETGATE(idt[T_PGFLT],	0, GD_KT, page_fault					, 0);
+	SETGATE(idt[T_FPERR],	0, GD_KT, floating_point_error			, 0);
+	SETGATE(idt[T_ALIGN],	0, GD_KT, aligment_check				, 0);
+	SETGATE(idt[T_MCHK],	0, GD_KT, machine_check					, 0);
+	SETGATE(idt[T_SIMDERR],	0, GD_KT, SIMD_floating_point_error		, 0);
+	SETGATE(idt[T_SYSCALL],	0, GD_KT, sysctem_call					, 3);
+	SETGATE(idt[T_DEFAULT],	0, GD_KT, catchall						, 0);
 
 	// Per-CPU setup 
 	trap_init_percpu();
@@ -136,13 +176,35 @@ print_regs(struct PushRegs *regs)
 	cprintf("  edx  0x%08x\n", regs->reg_edx);
 	cprintf("  ecx  0x%08x\n", regs->reg_ecx);
 	cprintf("  eax  0x%08x\n", regs->reg_eax);
-}
 
+}
 static void
 trap_dispatch(struct Trapframe *tf)
 {
 	// Handle processor exceptions.
 	// LAB 3: Your code here.
+	cprintf("caught an exception\n");
+
+	if (tf->tf_trapno == T_PGFLT) {
+	    page_fault_handler(tf);
+	    return;
+	}
+	if (tf->tf_trapno == T_BRKPT) {
+	    monitor(tf);
+	    return;
+	}
+	if (tf->tf_trapno == T_SYSCALL) {
+	    tf->tf_regs.reg_eax = syscall(
+			tf->tf_regs.reg_eax,
+		    tf->tf_regs.reg_edx,
+		    tf->tf_regs.reg_ecx,
+		    tf->tf_regs.reg_ebx,
+		    tf->tf_regs.reg_edi,
+		    tf->tf_regs.reg_esi);
+	    return;
+	}
+
+	cprintf("this is bad\n");
 
 	// Unexpected trap: The user process or the kernel has a bug.
 	print_trapframe(tf);

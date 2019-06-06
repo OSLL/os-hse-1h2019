@@ -61,20 +61,20 @@ const char *panicstr;
 void
 _panic(const char *file, int line, const char *fmt,...)
 {
-	va_list ap;
+    va_list ap;
 
-	if (panicstr)
-		goto dead;
-	panicstr = fmt;
+    if (panicstr)
+	goto dead;
+    panicstr = fmt;
 
-	// Be extra sure that the machine is in as reasonable state
-	__asm __volatile("cli; cld");
+    // Be extra sure that the machine is in as reasonable state
+    __asm __volatile("cli; cld");
 
-	va_start(ap, fmt);
-	cprintf("kernel panic at %s:%d: ", file, line);
-	vcprintf(fmt, ap);
-	cprintf("\n");
-	va_end(ap);
+    va_start(ap, fmt);
+    cprintf("kernel panic at %s:%d: ", file, line);
+    vcprintf(fmt, ap);
+    cprintf("\n");
+    va_end(ap);
 
 dead:
 	/* break into the kernel monitor */

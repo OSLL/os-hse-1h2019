@@ -23,12 +23,37 @@ struct Command {
 };
 
 static struct Command commands[] = {
-	{ "help", "Display this list of commands", mon_help },
-	{ "kerninfo", "Display information about the kernel", mon_kerninfo },
+    { "help", "Display this list of commands", mon_help },
+    { "kerninfo", "Display information about the kernel", mon_kerninfo },
+    { "panic", "Cause kernel panic", mon_panic },
+    { "backtrace", "Display stack backtrace", mon_backtrace },
+    { "int3", "Use int3", mon_int3 },
+    { "div", "divide by zero", mon_divzero },
+    { "ss", "make a system call", mon_sc },
 };
 #define NCOMMANDS (sizeof(commands)/sizeof(commands[0]))
 
 /***** Implementations of basic kernel monitor commands *****/
+
+int mon_sc(int argc, char **argv, struct Trapframe *tf) {
+    asm volatile("int $0x30");
+    return 0;
+}
+
+int
+mon_divzero(int argc, char **argv, struct Trapframe *tf) {
+    int x = 4;
+    x -= x;
+    int y = 1 / x;
+    cprintf("%d\n", y);
+    return 0;
+}
+
+int
+mon_int3(int argc, char **argv, struct Trapframe *tf) {
+    asm volatile("int $3");
+    return 0;
+}
 
 int
 mon_help(int argc, char **argv, struct Trapframe *tf)
@@ -56,14 +81,41 @@ mon_kerninfo(int argc, char **argv, struct Trapframe *tf)
 	return 0;
 }
 
+// My code here
+void one_frame_backtrace(uint32_t* ebp) {
+    uint32_t eip = *(ebp + 1);
+
+    cprintf("  ebp %08x  eip %08x  args %08x %08x %08x %08x %08x\n",
+			ebp, eip, *(ebp + 2), *(ebp + 3), *(ebp + 4), *(ebp + 5), *(ebp + 6));
+
+    struct Eipdebuginfo info;
+    if (debuginfo_eip(eip, &info) < 0)
+		cprintf("    error while finding debug info\n");
+
+    cprintf("    %s:%d: %.*s+%u\n",
+		info.eip_file, info.eip_line, info.eip_fn_namelen, info.eip_fn_name, eip -  info.eip_fn_addr);
+}
+
+// and my code here
 int
 mon_backtrace(int argc, char **argv, struct Trapframe *tf)
 {
-	// Your code here.
-	return 0;
+    cprintf("Stack backtrace:\n");
+
+    uint32_t *ebp = (uint32_t *)read_ebp();
+
+    while (ebp != 0) {
+        one_frame_backtrace(ebp);
+        ebp = (uint32_t *)*ebp;
+    }
+    return 0;
 }
 
-
+int
+mon_panic(int argc, char **argv, struct Trapframe *tf)
+{
+    panic("Panic was asked");
+}
 
 /***** Kernel monitor command interpreter *****/
 
