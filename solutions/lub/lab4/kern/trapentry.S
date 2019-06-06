@@ -44,13 +44,106 @@
 
 .text
 
-/*
- * Lab 3: Your code here for generating entry points for the different traps.
- */
+#define TRAPHANDLER_FROM_NUM(num) TRAPHANDLER(handler ## num, num)
+#define TRAPHANDLER_NOEC_FROM_NUM(num) TRAPHANDLER_NOEC(handler ## num, num)
+
+TRAPHANDLER_NOEC_FROM_NUM(0)
+TRAPHANDLER_NOEC_FROM_NUM(1)
+TRAPHANDLER_NOEC_FROM_NUM(2)
+TRAPHANDLER_NOEC_FROM_NUM(3)
+TRAPHANDLER_NOEC_FROM_NUM(4)
+TRAPHANDLER_NOEC_FROM_NUM(5)
+TRAPHANDLER_NOEC_FROM_NUM(6)
+TRAPHANDLER_NOEC_FROM_NUM(7)
+TRAPHANDLER_FROM_NUM(8)
+
+TRAPHANDLER_FROM_NUM(10)
+TRAPHANDLER_FROM_NUM(11)
+TRAPHANDLER_FROM_NUM(12)
+TRAPHANDLER_FROM_NUM(13)
+TRAPHANDLER_FROM_NUM(14)
+
+TRAPHANDLER_NOEC_FROM_NUM(16)
+TRAPHANDLER_FROM_NUM(17)
+TRAPHANDLER_NOEC_FROM_NUM(18)
+TRAPHANDLER_NOEC_FROM_NUM(19)
+
+TRAPHANDLER_NOEC_FROM_NUM(48)
+
+//IRQ
+
+TRAPHANDLER_NOEC_FROM_NUM(32)
+TRAPHANDLER_NOEC_FROM_NUM(33)
+TRAPHANDLER_NOEC_FROM_NUM(34)
+TRAPHANDLER_NOEC_FROM_NUM(35)
+TRAPHANDLER_NOEC_FROM_NUM(36)
+TRAPHANDLER_NOEC_FROM_NUM(37)
+TRAPHANDLER_NOEC_FROM_NUM(38)
+TRAPHANDLER_NOEC_FROM_NUM(39)
+TRAPHANDLER_NOEC_FROM_NUM(40)
+TRAPHANDLER_NOEC_FROM_NUM(41)
+TRAPHANDLER_NOEC_FROM_NUM(42)
+TRAPHANDLER_NOEC_FROM_NUM(43)
+TRAPHANDLER_NOEC_FROM_NUM(44)
+TRAPHANDLER_NOEC_FROM_NUM(45)
+TRAPHANDLER_NOEC_FROM_NUM(46)
+TRAPHANDLER_NOEC_FROM_NUM(47)
 
 
+.data
+.globl proc_excep_handlers
+proc_excep_handlers:
+	.long handler0
+	.long handler1
+	.long handler2
+	.long handler3
+	.long handler4
+	.long handler5
+	.long handler6
+	.long handler7
+	.long handler8
+	.long 0
+	.long handler10
+	.long handler11
+	.long handler12
+	.long handler13
+	.long handler14
+	.long 0
+	.long handler16
+	.long handler17
+	.long handler18
+	.long handler19
 
-/*
- * Lab 3: Your code here for _alltraps
- */
+.data
+.globl irq_handlers
+irq_handlers:
+	.long handler32	
+	.long handler33
+	.long handler34
+	.long handler35
+	.long handler36
+	.long handler37
+	.long handler38
+	.long handler39
+	.long handler40
+	.long handler41
+	.long handler42
+	.long handler43
+	.long handler44
+	.long handler45
+	.long handler46
+	.long handler47
 
+_alltraps:
+	pushl %ds
+	pushl %es
+	pushal
+
+	pushl $GD_KD
+	pushl $GD_KD
+	popl %ds
+	popl %es
+
+	pushl %esp
+
+	call trap
