@@ -34,6 +34,16 @@ bc_pgfault(struct UTrapframe *utf)
 	//
 	// LAB 5: you code here:
 
+	addr = ROUNDDOWN(addr, PGSIZE);
+	r = sys_page_alloc(0, addr, PTE_P | PTE_U | PTE_W);
+	if (r < 0) {
+		panic("bc_pgfault failed");
+	}
+	r = ide_read(BLKSECTS * blockno, addr, BLKSECTS);
+	if (r < 0) {
+		panic("bc_pgfault failed");
+	}
+
 }
 
 
@@ -46,4 +56,5 @@ bc_init(void)
 	// cache the super block by reading it once
 	memmove(&super, diskaddr(1), sizeof super);
 }
+
 
