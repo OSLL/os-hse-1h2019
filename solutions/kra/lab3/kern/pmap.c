@@ -104,7 +104,8 @@ boot_alloc(uint32_t n)
 		return nextfree;
 	}
 
-	if((uint32_t)nextfree - KERNBASE >= 0xffffffff) {
+	// 4 Gb = 0xffffffff
+	if((uint32_t)nextfree >= 0xffffffff) {
     	panic("out of memory");
 	}
 
